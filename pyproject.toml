@@ -1,0 +1,14 @@
+[project]
+name = "senior-project"
+version = "0.1.0"
+description = "bulbul contests scoring system by deep learning"
+readme = "README.md"
+requires-python = ">=3.12.10"
+dependencies = [
+    "librosa>=0.11.0",
+    "matplotlib>=3.10.8",
+    "noisereduce>=3.0.3",
+    "scipy>=1.17.0",
+    "soundfile>=0.13.1",
+    "tensorflow[and-cuda]>=2.20.0",
+]
