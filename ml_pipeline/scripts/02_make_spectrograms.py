@@ -1,92 +1,85 @@
 import os
-import glob
-import numpy as np
 import librosa
 import librosa.display
 import matplotlib.pyplot as plt
+import numpy as np
 from tqdm import tqdm
 
-# --- ตั้งค่า Configuration ---
-SR = 22050
-DURATION = 3.0
-TARGET_LENGTH = int(SR * DURATION)
-IMAGE_SIZE = 2.24  # นิ้ว (เพื่อให้ได้ 224x224 pixels ที่ 100 DPI)
+# --- 1. ตั้งค่าพื้นฐานให้ตรงกับรายงาน ---
+# เปลี่ยนมาดึงไฟล์จากโฟลเดอร์ที่เราเพิ่งทำ Augmentation เสร็จ
+INPUT_DIR = "ml_pipeline/data/03_5_augmented"
+OUTPUT_DIR = "ml_pipeline/data/04_spectrograms"
 
-def create_spectrogram(audio_path, save_path):
-    try:
-        # 1. โหลดไฟล์เสียง
-        y, sr = librosa.load(audio_path, sr=SR)
-        
-        # 2. ปรับความยาวให้เป็น 3.0 วินาทีเป๊ะ (Padding / Trimming)
-        if len(y) > TARGET_LENGTH:
-            # ถ้ายาวเกิน ให้ตัดเอาตรงกลาง (Center Crop)
-            start = (len(y) - TARGET_LENGTH) // 2
-            y = y[start:start + TARGET_LENGTH]
-        else:
-            # ถ้าสั้นไป ให้เติมความเงียบ (Zero Padding) แบ่งใส่หัว-ท้ายเท่าๆ กัน
-            padding = TARGET_LENGTH - len(y)
-            pad_left = padding // 2
-            pad_right = padding - pad_left
-            y = np.pad(y, (pad_left, pad_right), 'constant')
-            
-        # 3. สร้าง Mel-spectrogram
-        S = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128, fmax=8000)
-        S_dB = librosa.power_to_db(S, ref=np.max)
-        
-        # 4. วาดกราฟและเซฟเป็นรูปภาพ 224x224 (ไม่เอาแกน ตัวหนังสือ และขอบขาว)
-        fig = plt.figure(figsize=(IMAGE_SIZE, IMAGE_SIZE), dpi=100)
-        ax = plt.Axes(fig, [0., 0., 1., 1.])
-        ax.set_axis_off()
-        fig.add_axes(ax)
-        
-        librosa.display.specshow(S_dB, sr=sr, fmax=8000, ax=ax)
-        
-        # เซฟภาพทับด้วยคุณภาพสูง
-        fig.savefig(save_path, bbox_inches='tight', pad_inches=0)
-        plt.close(fig)
-        
-        return True
-    except Exception as e:
-        print(f"❌ Error processing {audio_path}: {e}")
-        return False
+# พารามิเตอร์ตามสเปกในรายงาน
+SR = 22050               # อัตราการสุ่ม (Sampling Rate)
+DURATION = 3.0           # ความยาว 3 วินาที (เพื่อให้ได้ความกว้างแกนเวลา ~130 time steps)
+N_FFT = 2048             # ขนาดหน้าต่าง STFT
+HOP_LENGTH = 512         # ระยะเลื่อนเฟรม
+N_MELS = 128             # จำนวน Mel filter bands (ความสูงของภาพ = 128)
 
-def process_folder(input_folder, output_folder):
-    os.makedirs(output_folder, exist_ok=True)
-    audio_files = glob.glob(os.path.join(input_folder, "*.wav"))
+# ตั้งค่าขนาดภาพให้ได้ กว้าง 130 x สูง 128 pixels เป๊ะๆ
+FIG_WIDTH = 1.30
+FIG_HEIGHT = 1.28
+DPI = 100
+
+def create_mel_spectrogram(audio_path, save_path):
+    # 1. โหลดไฟล์และปรับความยาวให้เป็น 3.0 วินาทีเป๊ะ (Center Padding)
+    y, sr = librosa.load(audio_path, sr=SR)
+    target_length = int(SR * DURATION)
     
-    if not audio_files:
-        print(f"⚠️ ไม่พบไฟล์ .wav ใน {input_folder}")
-        return
+    if len(y) > target_length:
+        start = (len(y) - target_length) // 2
+        y = y[start:start + target_length]
+    else:
+        pad_length = target_length - len(y)
+        y = np.pad(y, (pad_length // 2, pad_length - pad_length // 2), mode='constant')
 
-    print(f"กำลังประมวลผลโฟลเดอร์: {os.path.basename(input_folder)} ({len(audio_files)} ไฟล์)")
+    # 2. แปลงคลื่นเสียงเป็น Mel-spectrogram (ตามสูตรในรายงาน)
+    mel_signal = librosa.feature.melspectrogram(
+        y=y, 
+        sr=SR, 
+        n_fft=N_FFT, 
+        hop_length=HOP_LENGTH, 
+        n_mels=N_MELS
+    )
     
-    success_count = 0
-    for audio_path in tqdm(audio_files):
-        filename = os.path.splitext(os.path.basename(audio_path))[0]
-        save_path = os.path.join(output_folder, f"{filename}.png")
-        
-        if create_spectrogram(audio_path, save_path):
-            success_count += 1
-            
-    print(f"✅ แปลงสำเร็จ: {success_count}/{len(audio_files)} ภาพ\n")
+    # 3. แปลงพลังงานเสียงเป็นหน่วยเดซิเบล (Log-Amplitude)
+    spectrogram = librosa.power_to_db(mel_signal, ref=np.max)
+
+    # 4. วาดภาพและเซฟเป็นขาวดำ (Grayscale)
+    fig = plt.figure(figsize=(FIG_WIDTH, FIG_HEIGHT), dpi=DPI)
+    ax = fig.add_axes([0, 0, 1, 1]) # ให้รูปเต็มกรอบ 100%
+    ax.axis('off') # ปิดตัวเลขแกน
+    
+    # ใช้ cmap='gray' เพื่อให้ได้ภาพขาวดำ 1 Channel สำหรับป้อนให้ AI
+    librosa.display.specshow(spectrogram, sr=SR, hop_length=HOP_LENGTH, cmap='gray', ax=ax)
+    
+    plt.savefig(save_path, bbox_inches='tight', pad_inches=0, dpi=DPI, format='png')
+    plt.close(fig)
 
 def main():
-    # โฟลเดอร์ต้นทาง (ที่คุณคัดแยกไว้)
-    labeled_dir = "ml_pipeline/data/03_labeled"
-    noise_dir_in = os.path.join(labeled_dir, "0_noise")
-    singing_dir_in = os.path.join(labeled_dir, "1_singing")
+    print("🖼️ กำลังแปลงไฟล์เสียงเป็นภาพ Mel-spectrogram ขาวดำ (128x130)...")
     
-    # โฟลเดอร์ปลายทาง (สำหรับเก็บรูปภาพ)
-    spec_dir = "ml_pipeline/data/04_spectrograms"
-    noise_dir_out = os.path.join(spec_dir, "0_noise")
-    singing_dir_out = os.path.join(spec_dir, "1_singing")
+    classes = ["0_noise", "1_singing"]
     
-    print("🚀 เริ่มกระบวนการแปลงเสียงเป็นรูปภาพ Spectrogram (ขนาด 224x224)...\n")
-    
-    process_folder(noise_dir_in, noise_dir_out)
-    process_folder(singing_dir_in, singing_dir_out)
-    
-    print(f"🎉 เสร็จสิ้นกระบวนการทั้งหมด! เชิญดูรูปภาพได้ที่โฟลเดอร์: {spec_dir}")
+    for cls in classes:
+        in_class_dir = os.path.join(INPUT_DIR, cls)
+        out_class_dir = os.path.join(OUTPUT_DIR, cls)
+        os.makedirs(out_class_dir, exist_ok=True)
+        
+        if not os.path.exists(in_class_dir):
+            print(f"⚠️ ไม่พบโฟลเดอร์ {in_class_dir}")
+            continue
+            
+        files = [f for f in os.listdir(in_class_dir) if f.endswith('.wav')]
+        print(f"กำลังสร้างภาพคลาส {cls}: {len(files)} ไฟล์...")
+
+        for file in tqdm(files, desc=f"กำลังสร้างภาพคลาส {cls}"):
+            audio_path = os.path.join(in_class_dir, file)
+            save_path = os.path.join(out_class_dir, file.replace('.wav', '.png'))
+            create_mel_spectrogram(audio_path, save_path) 
+            
+    print(f"\n✅ เสร็จสิ้น! รูปภาพทั้งหมดถูกบันทึกไว้ที่: {OUTPUT_DIR}")
 
 if __name__ == "__main__":
     main()
