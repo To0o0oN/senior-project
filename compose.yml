@@ -10,3 +10,17 @@ services:
       - MONGO_INITDB_ROOT_PASSWORD=password123
     volumes:
       - ./mongo_data:/data/db
+
+  backend:
+    build: .
+    container_name: bulbul_backend
+    restart: always
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mongodb
+    volumes:
+      - .:/app  # Mount โค้ดทั้งหมดเพื่อให้แก้โค้ดแล้ว Refersh ทันที (Development mode)
+      - ./backend/uploads:/app/backend/uploads 
+    environment:
+      - MONGO_DETAILS=mongodb://admin:password123@mongodb:27017
