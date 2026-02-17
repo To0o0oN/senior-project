@@ -17,3 +17,6 @@ uploads/
 
 # env file
 .env
+
+# mongo db
+mongo_data/
