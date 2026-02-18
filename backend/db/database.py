@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 # โหลดค่าจากไฟล์ .env
 load_dotenv()
 
-MONGODB_URL = os.getenv("MONGODB_URL")
+MONGO_URL = os.getenv("MONGO_URL")
 DATABASE_NAME = os.getenv("DATABASE_NAME")
 
 class Database:
@@ -18,7 +18,7 @@ async def connect_to_mongo():
     """เปิดการเชื่อมต่อตอนเริ่มรันเซิร์ฟเวอร์"""
     print("⏳ กำลังเชื่อมต่อฐานข้อมูล MongoDB...")
     try:
-        db_instance.client = AsyncIOMotorClient(MONGODB_URL)
+        db_instance.client = AsyncIOMotorClient(MONGO_URL)
         db_instance.db = db_instance.client[DATABASE_NAME]
         print(f"✅ เชื่อมต่อ MongoDB (ฐานข้อมูล: {DATABASE_NAME}) สำเร็จ!")
     except Exception as e:
