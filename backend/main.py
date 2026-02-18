@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from backend.db.database import connect_to_mongo, close_mongo_connection
-from backend.api.routes import predict, auth
+from backend.api.routes import predict, auth, history, admin
 
 # ตั้งค่า Lifespan ให้เปิด-ปิด DB อัตโนมัติ
 @asynccontextmanager
@@ -35,6 +35,8 @@ app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 # รวม Router
 app.include_router(predict.router, prefix="/api", tags=["Prediction"])
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
+app.include_router(history.router, prefix="/api/history", tags=["History"])
+app.include_router(admin.router, prefix="/api/admin", tags=["Admin"])
 
 @app.get("/")
 def read_root():

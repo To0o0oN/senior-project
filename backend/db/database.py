@@ -30,6 +30,12 @@ async def close_mongo_connection():
         db_instance.client.close()
         print("✅ ปิดการเชื่อมต่อ MongoDB เรียบร้อย")
     
+async def create_indexes():
+    db = get_database()
+    # สร้าง Index ให้ session_id (1 หมายถึงเรียงลำดับจากน้อยไปมาก)
+    await db.results.create_index("session_id")
+    print("✅ Index for 'session_id' created successfully.")
+    
 def get_database():
     """เรียกใช้ฟังก์ชันนี้ใน API เพื่อเข้าถึงฐานข้อมูล"""
     return db_instance.db
