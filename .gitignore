@@ -13,10 +13,17 @@ wheels/
 ml_pipeline/data/
 
 # temp file from backend api
-uploads/
+uploads/audio/*
+uploads/images/*
+!uploads/audio/.gitkeep
+!uploads/images/.gitkeep
 
 # env file
 .env
 
 # mongo db
 mongo_data/
+
+# OS Files
+.DS_Store
+Thumbs.db
