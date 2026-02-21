@@ -1,23 +1,36 @@
+import { Routes, Route, Navigate } from 'react-router-dom';
+
+import { AuthProvider, useAuth } from './context/AuthContext.jsx';
+import Layout from './layouts/Layout.jsx';
+
+import Login from './pages/Login.jsx';
+import Register from './pages/Register.jsx';
+
+const ProtectedRoute = ({ children }) => {
+  const { user } = useAuth();
+  return user ? <Layout>{children}</Layout> : <Navigate to="/login" />;
+};
+
 const App = () => {
   return (
-    <div className='min-h-screen bg-gray-100 flex items-center justify-center p-4'>
-      <div className='bg-white p-8 rounded-3xl shadow-xl max-w-sm w-full text-center'>
-        <h1 className='text-2xl font-bold text-emerald-600 mb-2'>
-          Bird Score AI 🐦
-        </h1>
-        <p className='text-gray-500 mb-6'>
-          โครงสร้างโฟลเดอร์พร้อมแล้ว! ระบบ React 19 กำลังทำงาน
-        </p>
-        <div className='space-y-2'>
-          <div className='p-3 bg-emerald-50 rounded-xl border border-emerald-100 text-emerald-700 font-medium'>
-            ✅ Tailwind CSS Connected
-          </div>
-          <div className='p-3 bg-blue-50 rounded-xl border border-blue-100 text-blue-700 font-medium'>
-            📂 Folder Structure Created
-          </div>
-        </div>
-      </div>
-    </div>
+    <AuthProvider>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        
+        {/* หน้าที่ต้อง Login ก่อนถึงจะเห็น */}
+        <Route path="/" element={
+          <ProtectedRoute>
+            <div className="text-center pt-10">
+              <h1 className="text-2xl font-bold">ยินดีต้อนรับเข้าสู่ระบบ!</h1>
+              <p className="text-gray-500 mt-2">ตอนนี้คุณอยู่ในหน้า Dashboard แล้วครับ</p>
+            </div>
+          </ProtectedRoute>
+        } />
+
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+    </AuthProvider>
   );
 }
 
