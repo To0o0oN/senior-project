@@ -5,6 +5,14 @@ import Layout from './layouts/Layout.jsx';
 
 import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
+import Home from './pages/Home.jsx';
+
+// จำลอง
+const SessionSetup = () => <div>SessionSetup</div>
+const Competition = () => <div>Competition</div>
+const Sandbox = () => <div>Sandbox</div>
+const History = () => <div>History</div>
+const Admin = () => <div>Admin</div>
 
 const ProtectedRoute = ({ children }) => {
   const { user } = useAuth();
@@ -19,14 +27,14 @@ const App = () => {
         <Route path="/register" element={<Register />} />
         
         {/* หน้าที่ต้อง Login ก่อนถึงจะเห็น */}
-        <Route path="/" element={
-          <ProtectedRoute>
-            <div className="text-center pt-10">
-              <h1 className="text-2xl font-bold">ยินดีต้อนรับเข้าสู่ระบบ!</h1>
-              <p className="text-gray-500 mt-2">ตอนนี้คุณอยู่ในหน้า Dashboard แล้วครับ</p>
-            </div>
-          </ProtectedRoute>
-        } />
+        <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+
+        <Route path="/setup" element={<ProtectedRoute><SessionSetup /></ProtectedRoute>} />
+        <Route path="/competition" element={<ProtectedRoute><Competition /></ProtectedRoute>} />
+        <Route path="/sandbox" element={<ProtectedRoute><Sandbox /></ProtectedRoute>} />
+        <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
+
+        <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
 
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
