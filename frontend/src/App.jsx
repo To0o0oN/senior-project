@@ -6,10 +6,10 @@ import Layout from './layouts/Layout.jsx';
 import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
 import Home from './pages/Home.jsx';
+import SessionSetup from './pages/SessionSetup.jsx';
+import Competition from './pages/Competition.jsx';
 
 // จำลอง
-const SessionSetup = () => <div>SessionSetup</div>
-const Competition = () => <div>Competition</div>
 const Sandbox = () => <div>Sandbox</div>
 const History = () => <div>History</div>
 const Admin = () => <div>Admin</div>
